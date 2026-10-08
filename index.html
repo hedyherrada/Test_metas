@@ -32,7 +32,8 @@
     .feedback-panel h2 { margin: 0 0 4px; font-size: 14px; font-weight: 650; }
     .feedback-panel p { margin: 0; color: #536176; font-size: 13px; line-height: 1.45; }
     .feedback-status { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
-    .suggestion-button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 18px; border: 1px solid var(--blue); border-radius: 6px; background: var(--blue); color: #fff; font: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .suggestion-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 18px; border: 1px solid var(--blue); border-radius: 6px; background: var(--blue); color: #fff; font: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .suggestion-button svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .suggestion-button:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
     .detail-panel { overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 9px; }
     .panel-heading { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; border-bottom: 1px solid var(--line); }
@@ -70,7 +71,7 @@
     .icon-button[data-tip]:hover::after, .icon-button[data-tip]:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
     .field { width: min(100%, 130px); height: 30px; padding: 4px 8px; border: 1px solid #acd2e4; border-radius: 5px; background: #fff; color: var(--ink); font: inherit; font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
     .field:focus { border-color: var(--blue); outline: 2px solid rgba(0, 118, 168, .12); }
-    .is-edited { background: #eff8fc; }
+    .is-edited .field { border-color: #8dc5df; background: #eaf7fc; color: var(--blue-dark); font-weight: 600; }
     .empty-day { color: #8793a4; }
     tfoot td { height: 49px; background: #f8fafc; color: #173c64; font-weight: 600; }
     tfoot td:first-child { font-weight: 650; }
@@ -117,7 +118,7 @@
         <p>Puedes dejar tus comentarios y sugerencias en el siguiente enlace.</p>
         <small class="feedback-status" id="suggestions-status">Tus comentarios nos ayudarán a mejorar el módulo.</small>
       </div>
-      <a class="suggestion-button" href="https://forms.gle/PHeHQHUvbiTkUD8x7" target="_blank" rel="noopener noreferrer" aria-describedby="suggestions-status">Sugerencias</a>
+      <a class="suggestion-button" href="https://forms.gle/PHeHQHUvbiTkUD8x7" target="_blank" rel="noopener noreferrer" aria-describedby="suggestions-status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.1a7.5 7.5 0 1 1 17-4.4Z"/><path d="M8 11h8M8 14h5"/></svg><span>Déjanos tus comentarios</span></a>
     </section>
     <section class="detail-panel" aria-labelledby="detail-title">
       <header class="panel-heading">
@@ -264,7 +265,8 @@
           const cells = fields.map(field => {
             const val = valueFor(day, field.key);
             if (!isEditing) return `<td class="value">${val === null ? '—' : field.display(val)}</td>`;
-            return `<td><input class="field" data-field="${field.key}" data-index="${index}" aria-label="${field.label} para ${day.name}" inputmode="decimal" autocomplete="off" value="${escapeHtml(val === null ? '' : field.input(val))}"></td>`;
+            const updatedClass = day.autoUpdatedFields?.has(field.key) ? ' class="is-edited"' : '';
+            return `<td${updatedClass}><input class="field" data-field="${field.key}" data-index="${index}" aria-label="${field.label} para ${day.name}" inputmode="decimal" autocomplete="off" value="${escapeHtml(val === null ? '' : field.input(val))}"></td>`;
           }).join('');
           const actionMarkup = isEditing
             ? `<button class="icon-button save-button" type="button" data-action="save" data-index="${index}" data-tip="Guardar" aria-label="Guardar cambios">${icon('check')}</button><button class="icon-button cancel-button" type="button" data-action="cancel" data-index="${index}" data-tip="Cancelar" aria-label="Cancelar cambios">${icon('close')}</button>`
@@ -298,6 +300,7 @@
         days[index].snapshot = { ...days[index] };
         days[index].editing = true;
         days[index].lastChanged = null;
+        days[index].autoUpdatedFields = new Set();
         editingIndex = index;
         render();
         tbody.querySelector(`input[data-index="${index}"][data-field="sale"]`)?.focus();
@@ -345,6 +348,7 @@
           input.setAttribute('aria-invalid', 'true');
           return;
         }
+        const previousKpis = kpis(day);
         const candidate = { ...day };
         const error = applyEditToBases(candidate, field.key, parsed);
         if (error) {
@@ -356,13 +360,20 @@
         input.removeAttribute('aria-invalid');
         for (const key of ['sale', 'entries', 'tickets', 'articles', 'traffic']) day[key] = candidate[key];
         day.lastChanged = field.key;
+        day.autoUpdatedFields ||= new Set();
+        day.autoUpdatedFields.delete(field.key);
+        const updatedKpis = kpis(day);
         // Los demás campos visibles se refrescan desde las bases calculadas, sin promedios.
         for (const other of fields) {
           if (other.key === field.key) continue;
+          const previousDisplay = previousKpis[other.key] === null ? '—' : other.display(previousKpis[other.key]);
+          const updatedDisplay = updatedKpis[other.key] === null ? '—' : other.display(updatedKpis[other.key]);
+          if (previousDisplay !== updatedDisplay) day.autoUpdatedFields.add(other.key);
           const otherInput = tbody.querySelector(`input[data-index="${index}"][data-field="${other.key}"]`);
           const currentValue = valueFor(day, other.key);
           if (otherInput) {
             otherInput.value = currentValue === null ? '' : other.input(currentValue);
+            otherInput.closest('td')?.classList.toggle('is-edited', day.autoUpdatedFields.has(other.key));
           }
         }
       }
@@ -380,6 +391,7 @@
         delete day.snapshot;
         delete day.editing;
         delete day.lastChanged;
+        delete day.autoUpdatedFields;
         closeEditGuidance();
         render();
       }
