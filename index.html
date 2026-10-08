@@ -24,9 +24,16 @@
     * { box-sizing: border-box; }
     body { margin: 0; min-width: 360px; background: #f3f5f8; color: var(--ink); font-size: 13px; }
     main { max-width: 1480px; display: grid; gap: 16px; margin: 32px auto; padding: 0 28px; }
+    .page-title { margin: 0; color: var(--blue-dark); font-size: clamp(28px, 3vw, 36px); font-weight: 700; letter-spacing: -.03em; line-height: 1.15; }
     .welcome-panel { padding: 16px 18px; border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 9px; background: #fff; }
-    .welcome-panel h1 { margin: 0 0 6px; color: var(--ink); font-size: 16px; font-weight: 650; }
+    .welcome-panel h2 { margin: 0 0 6px; color: var(--ink); font-size: 16px; font-weight: 650; }
     .welcome-panel p { margin: 0; color: #536176; font-size: 13px; line-height: 1.5; }
+    .feedback-panel { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+    .feedback-panel h2 { margin: 0 0 4px; font-size: 14px; font-weight: 650; }
+    .feedback-panel p { margin: 0; color: #536176; font-size: 13px; line-height: 1.45; }
+    .feedback-status { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .suggestion-button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 18px; border: 1px solid var(--blue); border-radius: 6px; background: var(--blue); color: #fff; font: inherit; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .suggestion-button:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
     .detail-panel { overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 9px; }
     .panel-heading { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; border-bottom: 1px solid var(--line); }
     .panel-heading h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; font-weight: 650; }
@@ -89,6 +96,8 @@
     @media (max-width: 720px) {
       main { margin: 16px auto; padding: 0 12px; }
       .welcome-panel { padding: 14px; }
+      .feedback-panel { align-items: stretch; flex-direction: column; padding: 14px; }
+      .suggestion-button { width: 100%; }
       .panel-heading { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 11px 14px; }
       .period { padding-left: 26px; }
     }
@@ -97,9 +106,18 @@
 </head>
 <body>
   <main>
+    <h1 class="page-title">Prueba de Usabilidad Módulo de metas</h1>
     <section class="welcome-panel" aria-labelledby="welcome-title">
-      <h1 id="welcome-title">Test Módulo de metas</h1>
+      <h2 id="welcome-title">Test Módulo de metas</h2>
       <p>El objetivo de esta prueba es validar si los cálculos de metas de esta sección tienen sentido para ti. Revisa los valores y prueba las interacciones. Por favor, déjanos comentarios sobre todas las inconsistencias, resultados inesperados y problemas que encuentres.</p>
+    </section>
+    <section class="feedback-panel" aria-labelledby="feedback-title">
+      <div>
+        <h2 id="feedback-title">Comparte tus sugerencias</h2>
+        <p>Puedes dejar tus comentarios y sugerencias en el siguiente enlace.</p>
+        <small class="feedback-status" id="suggestions-status">Tus comentarios nos ayudarán a mejorar el módulo.</small>
+      </div>
+      <a class="suggestion-button" href="https://forms.gle/PHeHQHUvbiTkUD8x7" target="_blank" rel="noopener noreferrer" aria-describedby="suggestions-status">Sugerencias</a>
     </section>
     <section class="detail-panel" aria-labelledby="detail-title">
       <header class="panel-heading">
@@ -107,7 +125,7 @@
           <svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9h16M8 12.5h2M13 12.5h2M8 16h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           Detalle diario · Semana retail 10
         </h2>
-        <span class="period">03–09 mar 2025 · Arequipa</span>
+        <span class="period">03–09 mar 2025</span>
       </header>
       <p class="edit-guidance" id="edit-guidance" role="status" aria-live="polite" hidden></p>
       <div class="table-wrap">
