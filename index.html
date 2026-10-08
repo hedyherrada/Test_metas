@@ -158,27 +158,29 @@
   <script>
     (() => {
       const sampleDays = [
-        { name: 'Lunes', date: '03-03-2025', sale: 4200000, entries: 2710, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Martes', date: '04-03-2025', sale: 4500000, entries: 2903, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Miércoles', date: '05-03-2025', sale: 4100000, entries: 2645, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Jueves', date: '06-03-2025', sale: 4800000, entries: 3097, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Viernes', date: '07-03-2025', sale: 3600000, entries: 2322, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Sábado', date: '08-03-2025', sale: 6200000, entries: 4000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
-        { name: 'Domingo', date: '09-03-2025', sale: 3680200, entries: 2374, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 }
+        { name: 'Lunes', date: '03-03-2025', sale: 4200000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Martes', date: '04-03-2025', sale: 4500000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Miércoles', date: '05-03-2025', sale: 4100000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Jueves', date: '06-03-2025', sale: 4800000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Viernes', date: '07-03-2025', sale: 3600000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Sábado', date: '08-03-2025', sale: 6200000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Domingo', date: '09-03-2025', sale: 3680200, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 }
       ];
       // El estado conserva bases; ratios y promedios se obtienen siempre desde ellas.
-      const days = sampleDays.map(({ name, date, sale, entries, items, capture, ticket }) => {
-        const tickets = sale / ticket;
+      const days = sampleDays.map(({ name, date, sale, items, conversion, capture, ticket }) => {
+        const tickets = sale > 0 && ticket > 0 ? sale / ticket : 0;
+        const entries = tickets > 0 && conversion > 0 ? tickets / (conversion / 100) : 0;
         return {
           name,
           date,
           sale,
           entries,
           tickets,
-          articles: tickets * items,
-          traffic: entries / (capture / 100)
+          articles: tickets > 0 && items > 0 ? tickets * items : 0,
+          traffic: entries > 0 && capture > 0 ? entries / (capture / 100) : 0
         };
       });
+      // Un cero indica que no hay base suficiente: se omite el KPI dependiente, sin invalidar el día.
       const money = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
       const integer = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
       const decimal = new Intl.NumberFormat('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -227,12 +229,12 @@
         return {
           sale: day.sale,
           entries: day.entries,
-          items: day.tickets > 0 ? day.articles / day.tickets : null,
-          conversion: day.entries > 0 ? day.tickets / day.entries * 100 : null,
-          capture: day.traffic > 0 ? day.entries / day.traffic * 100 : null,
-          ticket: day.tickets > 0 ? day.sale / day.tickets : null,
+          items: day.tickets > 0 && day.articles > 0 ? day.articles / day.tickets : null,
+          conversion: day.entries > 0 && day.tickets > 0 ? day.tickets / day.entries * 100 : null,
+          capture: day.traffic > 0 && day.entries > 0 ? day.entries / day.traffic * 100 : null,
+          ticket: day.tickets > 0 && day.sale > 0 ? day.sale / day.tickets : null,
           // Precio promedio es derivado interno; se conserva fuera de la tabla.
-          price: day.articles > 0 ? day.sale / day.articles : null
+          price: day.articles > 0 && day.sale > 0 ? day.sale / day.articles : null
         };
       }
       function valueFor(day, key) {
@@ -282,13 +284,14 @@
           traffic: sum('traffic')
         };
         const aggregate = {
-          items: totals.tickets > 0 ? totals.articles / totals.tickets : null,
-          conversion: totals.entries > 0 ? totals.tickets / totals.entries * 100 : null,
-          capture: totals.traffic > 0 ? totals.entries / totals.traffic * 100 : null,
-          ticket: totals.tickets > 0 ? totals.sale / totals.tickets : null
+          items: totals.tickets > 0 && totals.articles > 0 ? totals.articles / totals.tickets : null,
+          conversion: totals.entries > 0 && totals.tickets > 0 ? totals.tickets / totals.entries * 100 : null,
+          capture: totals.traffic > 0 && totals.entries > 0 ? totals.entries / totals.traffic * 100 : null,
+          ticket: totals.tickets > 0 && totals.sale > 0 ? totals.sale / totals.tickets : null
         };
         const ratio = (key, suffix = '') => aggregate[key] === null ? '—' : `${decimal.format(aggregate[key])}${suffix}`;
-        tfoot.innerHTML = `<tr><td>Total / ratio</td><td>${loaded.length ? `$${money.format(totals.sale)}` : '—'}</td><td>${loaded.length ? integer.format(totals.entries) : '—'}</td><td>${ratio('items')}</td><td>${ratio('conversion', '%')}</td><td>${ratio('capture', '%')}</td><td>${aggregate.ticket === null ? '—' : `$${integer.format(aggregate.ticket)}`}</td><td></td></tr>`;
+        const ticketTotal = aggregate.ticket === null ? '—' : `$${integer.format(aggregate.ticket)}`;
+        tfoot.innerHTML = `<tr><td>Total / ratio</td><td>${loaded.length ? `$${money.format(totals.sale)}` : '—'}</td><td>${loaded.length ? integer.format(totals.entries) : '—'}</td><td>${ratio('items')}</td><td>${ratio('conversion', '%')}</td><td>${ratio('capture', '%')}</td><td>${ticketTotal}</td><td></td></tr>`;
       }
       function startEdit(index) {
         if (!days[index] || days.some(day => day && day.editing)) return;
@@ -303,27 +306,32 @@
         if (key === 'sale') day.sale = value;
         if (key === 'entries') day.entries = value;
         if (key === 'items') {
-          if (value < 1) return 'Artículos por ticket debe ser igual o mayor que 1.';
-          day.articles = value * day.tickets;
+          day.articles = value === 0 ? 0 : day.tickets > 0 ? value * day.tickets : day.articles;
         }
         if (key === 'conversion') {
-          if (value <= 0 || value > 100) return 'La tasa de conversión debe ser mayor que 0% y no superar 100%.';
-          day.entries = day.tickets / (value / 100);
+          day.entries = value === 0 ? 0 : day.tickets > 0 ? day.tickets / (value / 100) : day.entries;
         }
         if (key === 'capture') {
-          if (value <= 0 || value > 100) return 'La tasa de captación debe ser mayor que 0% y no superar 100%.';
-          day.traffic = day.entries / (value / 100);
+          day.traffic = value === 0 ? 0 : day.entries > 0 ? day.entries / (value / 100) : day.traffic;
         }
-        if (key === 'ticket') day.sale = value * day.tickets;
+        if (key === 'ticket') {
+          if (value === 0) day.tickets = 0;
+          else {
+            const ticketBase = day.tickets > 0 ? day.tickets : day.snapshot?.tickets || 0;
+            if (ticketBase > 0) {
+              day.tickets = ticketBase;
+              day.sale = value * ticketBase;
+            }
+          }
+        }
         return validateBases(day);
       }
       function validateBases(day) {
         const bases = [day.sale, day.entries, day.tickets, day.articles, day.traffic];
         if (bases.some(value => !Number.isFinite(value) || value < 0)) return 'Los indicadores no pueden tener valores negativos.';
-        if (day.tickets <= 0 || day.entries <= 0 || day.articles <= 0 || day.traffic <= 0) return 'El valor debe permitir calcular los indicadores relacionados.';
-        if (day.tickets > day.entries + 1e-9) return 'Los tickets no pueden superar las entradas (conversión máxima: 100%).';
-        if (day.entries > day.traffic + 1e-9) return 'Las entradas no pueden superar el tráfico externo (captación máxima: 100%).';
-        if (day.articles + 1e-9 < day.tickets) return 'Debe haber al menos un artículo por ticket.';
+        if (day.tickets > 0 && day.entries > 0 && day.tickets > day.entries + 1e-9) return 'Los tickets no pueden superar las entradas (conversión máxima: 100%).';
+        if (day.entries > 0 && day.traffic > 0 && day.entries > day.traffic + 1e-9) return 'Las entradas no pueden superar el tráfico externo (captación máxima: 100%).';
+        if (day.articles > 0 && day.tickets > 0 && day.articles + 1e-9 < day.tickets) return 'Debe haber al menos un artículo por ticket.';
         return '';
       }
       function updateEditedField(input) {
@@ -353,7 +361,9 @@
           if (other.key === field.key) continue;
           const otherInput = tbody.querySelector(`input[data-index="${index}"][data-field="${other.key}"]`);
           const currentValue = valueFor(day, other.key);
-          if (otherInput) otherInput.value = currentValue === null ? '' : other.input(currentValue);
+          if (otherInput) {
+            otherInput.value = currentValue === null ? '' : other.input(currentValue);
+          }
         }
       }
       function saveEdit(index) {
