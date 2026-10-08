@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fa">
+  <title>Detalle diario de metas · Semana retail 10</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #162b46;
+      --muted: #6c7b91;
+      --line: #dfe5ec;
+      --soft: #f7f9fb;
+      --blue: #0076a8;
+      --blue-dark: #005f88;
+      --green: #00845f;
+      --red: #d92d20;
+      --shadow: 0 10px 30px rgba(20, 39, 63, .12);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 360px; background: #f3f5f8; color: var(--ink); font-size: 13px; }
+    main { max-width: 1480px; display: grid; gap: 16px; margin: 32px auto; padding: 0 28px; }
+    .welcome-panel { padding: 16px 18px; border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 9px; background: #fff; }
+    .welcome-panel h1 { margin: 0 0 6px; color: var(--ink); font-size: 16px; font-weight: 650; }
+    .welcome-panel p { margin: 0; color: #536176; font-size: 13px; line-height: 1.5; }
+    .detail-panel { overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 9px; }
+    .panel-heading { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; border-bottom: 1px solid var(--line); }
+    .panel-heading h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; font-weight: 650; }
+    .calendar-icon { width: 16px; height: 16px; color: var(--blue); flex: 0 0 auto; }
+    .period { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .edit-guidance { margin: 0; padding: 8px 18px; border-bottom: 1px solid var(--line); background: #f4fafe; color: #38556d; font-size: 11px; line-height: 1.4; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 1050px; border-collapse: collapse; table-layout: fixed; }
+    col.day { width: 15%; } col.sale { width: 13%; } col.entries { width: 11%; }
+    col.items { width: 13%; } col.conv { width: 13%; } col.capture { width: 13%; }
+    col.ticket { width: 13%; } col.actions { width: 9%; }
+    thead th { height: 40px; padding: 0 10px; background: #f8fafc; border-bottom: 1px solid var(--line); color: #536176; font-size: 11px; font-weight: 600; text-align: center; white-space: nowrap; }
+    thead th:first-child { text-align: left; padding-left: 18px; }
+    tbody td, tfoot td { height: 45px; padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: center; font-size: 12px; }
+    tbody tr:last-child td { border-bottom: 1px solid var(--line); }
+    tbody tr:hover { background: #fbfcfe; }
+    tbody td:first-child, tfoot td:first-child { padding-left: 18px; text-align: left; }
+    .date-name { display: block; color: #33445c; font-weight: 550; line-height: 1.35; }
+    .date-value { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.25; }
+    .value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .actions { display: flex; justify-content: center; align-items: center; gap: 8px; }
+    button { font: inherit; }
+    .icon-button { position: relative; width: 26px; height: 28px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 5px; background: transparent; cursor: pointer; transition: background-color .12s ease, color .12s ease; }
+    .icon-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    .edit-button, .save-button { color: var(--blue); }
+    .edit-button:hover { background: #edf7fb; color: var(--blue-dark); }
+    .delete-button, .cancel-button { color: var(--red); }
+    .delete-button:hover, .cancel-button:hover { background: #fff0ef; }
+    .save-button:hover { background: #e5f7f1; color: #006b4d; }
+    .save-button { color: var(--green); }
+    .cancel-button { color: var(--red); }
+    .icon-button:focus-visible, .field:focus-visible, .dialog-button:focus-visible, .dialog-close:focus-visible { outline: 2px solid #1688f8; outline-offset: 2px; }
+    .icon-button[data-tip]::after { content: attr(data-tip); position: absolute; z-index: 5; bottom: calc(100% + 8px); left: 50%; transform: translate(-50%, 3px); padding: 6px 9px; border-radius: 5px; background: #26384f; color: white; font-size: 11px; font-weight: 500; line-height: 1; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .1s ease, transform .1s ease; }
+    .icon-button[data-tip]:hover::after, .icon-button[data-tip]:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+    .field { width: min(100%, 130px); height: 30px; padding: 4px 8px; border: 1px solid #acd2e4; border-radius: 5px; background: #fff; color: var(--ink); font: inherit; font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+    .field:focus { border-color: var(--blue); outline: 2px solid rgba(0, 118, 168, .12); }
+    .is-edited { background: #eff8fc; }
+    .empty-day { color: #8793a4; }
+    tfoot td { height: 49px; background: #f8fafc; color: #173c64; font-weight: 600; }
+    tfoot td:first-child { font-weight: 650; }
+    .toast { position: fixed; z-index: 20; top: 22px; left: 50%; width: min(600px, calc(100vw - 32px)); min-height: 52px; display: none; align-items: center; gap: 11px; padding: 12px 14px; transform: translateX(-50%); border: 1px solid #b6ead6; border-radius: 7px; background: #e5f8f0; color: #006d4d; box-shadow: var(--shadow); font-size: 13px; }
+    .toast.is-visible { display: flex; animation: toast-in .16s ease-out; }
+    .toast svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; }
+    .toast-message { flex: 1; }
+    .toast-close { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+    .toast-close:hover { background: rgba(0, 109, 77, .09); }
+    .dialog-backdrop { position: fixed; z-index: 30; inset: 0; display: none; place-items: center; padding: 20px; background: rgba(19, 35, 54, .38); }
+    .dialog-backdrop.is-open { display: grid; }
+    .dialog { width: min(420px, 100%); padding: 22px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: var(--shadow); }
+    .dialog-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .dialog h2 { margin: 0; font-size: 16px; }
+    .dialog p { margin: 12px 0 22px; color: #536176; font-size: 13px; line-height: 1.5; }
+    .dialog-close { width: 28px; height: 28px; border: 0; border-radius: 5px; background: transparent; color: #637186; font-size: 20px; cursor: pointer; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; }
+    .dialog-button { min-height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink); font-weight: 600; cursor: pointer; }
+    .dialog-button:hover { background: var(--soft); }
+    .dialog-button.danger { border-color: var(--red); background: var(--red); color: #fff; }
+    .dialog-button.danger:hover { border-color: #b42318; background: #b42318; }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    @media (max-width: 720px) {
+      main { margin: 16px auto; padding: 0 12px; }
+      .welcome-panel { padding: 14px; }
+      .panel-heading { align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; padding: 11px 14px; }
+      .period { padding-left: 26px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="welcome-panel" aria-labelledby="welcome-title">
+      <h1 id="welcome-title">Test Módulo de metas</h1>
+      <p>El objetivo de esta prueba es validar si los cálculos de metas de esta sección tienen sentido para ti. Revisa los valores y prueba las interacciones. Por favor, déjanos comentarios sobre todas las inconsistencias, resultados inesperados y problemas que encuentres.</p>
+    </section>
+    <section class="detail-panel" aria-labelledby="detail-title">
+      <header class="panel-heading">
+        <h2 id="detail-title">
+          <svg class="calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9h16M8 12.5h2M13 12.5h2M8 16h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Detalle diario · Semana retail 10
+        </h2>
+        <span class="period">03–09 mar 2025 · Arequipa</span>
+      </header>
+      <p class="edit-guidance" id="edit-guidance" role="status" aria-live="polite" hidden></p>
+      <div class="table-wrap">
+        <table aria-label="Metas diarias de la semana retail 10">
+          <colgroup><col class="day"><col class="sale"><col class="entries"><col class="items"><col class="conv"><col class="capture"><col class="ticket"><col class="actions"></colgroup>
+          <thead><tr>
+            <th scope="col">Fecha</th><th scope="col">Meta de Venta</th><th scope="col">Entradas</th><th scope="col">Artículos por ticket</th><th scope="col">Tasa de Conversión</th><th scope="col">Tasa de captación</th><th scope="col">Ticket promedio</th><th scope="col">Acciones</th>
+          </tr></thead>
+          <tbody id="daily-rows"></tbody>
+          <tfoot id="totals-row"></tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+    <span class="toast-message" id="toast-message"></span>
+    <button class="toast-close" id="toast-close" type="button" aria-label="Cerrar alerta">×</button>
+  </div>
+
+  <div class="dialog-backdrop" id="delete-dialog" role="presentation">
+    <section class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-copy">
+      <div class="dialog-top"><h2 id="dialog-title">Eliminar metas del día</h2><button class="dialog-close" id="dialog-x" type="button" aria-label="Cerrar">×</button></div>
+      <p id="dialog-copy">¿Quieres eliminar las metas de este día? Esta acción dejará el día sin una meta cargada.</p>
+      <div class="dialog-actions"><button class="dialog-button" id="dialog-cancel" type="button">Cancelar</button><button class="dialog-button danger" id="dialog-confirm" type="button">Eliminar metas</button></div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const sampleDays = [
+        { name: 'Lunes', date: '03-03-2025', sale: 4200000, entries: 2710, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Martes', date: '04-03-2025', sale: 4500000, entries: 2903, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Miércoles', date: '05-03-2025', sale: 4100000, entries: 2645, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Jueves', date: '06-03-2025', sale: 4800000, entries: 3097, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Viernes', date: '07-03-2025', sale: 3600000, entries: 2322, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Sábado', date: '08-03-2025', sale: 6200000, entries: 4000, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 },
+        { name: 'Domingo', date: '09-03-2025', sale: 3680200, entries: 2374, items: 2.1, conversion: 5.6, capture: 35.6, ticket: 27680 }
+      ];
+      // El estado conserva bases; ratios y promedios se obtienen siempre desde ellas.
+      const days = sampleDays.map(({ name, date, sale, entries, items, capture, ticket }) => {
+        const tickets = sale / ticket;
+        return {
+          name,
+          date,
+          sale,
+          entries,
+          tickets,
+          articles: tickets * items,
+          traffic: entries / (capture / 100)
+        };
+      });
+      const money = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+      const integer = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+      const decimal = new Intl.NumberFormat('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const fields = [
+        { key: 'sale', label: 'Meta de Venta', display: value => `$${money.format(value)}`, input: value => String(Math.round(value)), parse: parseAmount },
+        { key: 'entries', label: 'Entradas', display: value => integer.format(value), input: value => String(Math.round(value)), parse: parseAmount },
+        { key: 'items', label: 'Artículos por ticket', display: value => decimal.format(value), input: value => decimal.format(value).replace('.', ','), parse: parseDecimal },
+        { key: 'conversion', label: 'Tasa de Conversión', display: value => `${decimal.format(value)}%`, input: value => decimal.format(value).replace('.', ','), parse: parseDecimal },
+        { key: 'capture', label: 'Tasa de captación', display: value => `${decimal.format(value)}%`, input: value => decimal.format(value).replace('.', ','), parse: parseDecimal },
+        { key: 'ticket', label: 'Ticket promedio', display: value => `$${integer.format(value)}`, input: value => String(Math.round(value)), parse: parseAmount }
+      ];
+      const tbody = document.querySelector('#daily-rows');
+      const tfoot = document.querySelector('#totals-row');
+      const dialog = document.querySelector('#delete-dialog');
+      const toast = document.querySelector('#toast');
+      const editGuidance = document.querySelector('#edit-guidance');
+      let pendingDelete = null;
+      let toastTimer = 0;
+      let editingIndex = null;
+
+      function parseAmount(value) {
+        const normalized = String(value).trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+        if (!normalized) return null;
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+      }
+      function parseDecimal(value) {
+        const normalized = String(value).trim().replace(',', '.').replace(/[^\d.-]/g, '');
+        if (!normalized) return null;
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+      }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+      }
+      function icon(name) {
+        const paths = {
+          edit: '<path d="m14.5 5.5 4 4M4 20l4.2-.8L19 7.4a2.1 2.1 0 0 0-3-3L5.2 15.2 4 20Z"/>',
+          trash: '<path d="M4.5 7h15M9 7V4.5h6V7m-8.5 0 .8 13h9.4l.8-13M10 10.5v6m4-6v6"/>',
+          check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+          close: '<path d="m6 6 12 12M18 6 6 18"/>'
+        };
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
+      }
+      function kpis(day) {
+        return {
+          sale: day.sale,
+          entries: day.entries,
+          items: day.tickets > 0 ? day.articles / day.tickets : null,
+          conversion: day.entries > 0 ? day.tickets / day.entries * 100 : null,
+          capture: day.traffic > 0 ? day.entries / day.traffic * 100 : null,
+          ticket: day.tickets > 0 ? day.sale / day.tickets : null,
+          // Precio promedio es derivado interno; se conserva fuera de la tabla.
+          price: day.articles > 0 ? day.sale / day.articles : null
+        };
+      }
+      function valueFor(day, key) {
+        return kpis(day)[key];
+      }
+      function updateEditGuidance(key) {
+        const messages = {
+          sale: 'Venta es una base: al editarla se recalculan Ticket promedio y Precio promedio.',
+          entries: 'Entradas es una base: al editarla se recalculan Conversión y Captación.',
+          items: 'Supuesto aplicado: se ajusta la base Artículos; se recalcula Precio promedio.',
+          conversion: 'Supuesto aplicado: se ajusta la base Entradas; también se recalcula Captación.',
+          capture: 'Supuesto aplicado: se ajusta la base Tráfico externo; los demás KPIs calculados se mantienen.',
+          ticket: 'Supuesto aplicado: se ajusta la base Venta; también se recalcula Precio promedio.'
+        };
+        editGuidance.textContent = messages[key] || '';
+        editGuidance.hidden = !messages[key];
+      }
+      function closeEditGuidance() {
+        editingIndex = null;
+        editGuidance.hidden = true;
+        editGuidance.textContent = '';
+      }
+      function render() {
+        tbody.innerHTML = days.map((day, index) => {
+          if (!day) return `<tr class="empty-day"><td><span class="date-name">${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'][index]}</span><span class="date-value">${['03-03-2025','04-03-2025','05-03-2025','06-03-2025','07-03-2025','08-03-2025','09-03-2025'][index]}</span></td>${fields.map(() => '<td>—</td>').join('')}<td>—</td></tr>`;
+          const isEditing = Boolean(day.editing);
+          const cells = fields.map(field => {
+            const val = valueFor(day, field.key);
+            if (!isEditing) return `<td class="value">${val === null ? '—' : field.display(val)}</td>`;
+            return `<td><input class="field" data-field="${field.key}" data-index="${index}" aria-label="${field.label} para ${day.name}" inputmode="decimal" autocomplete="off" value="${escapeHtml(val === null ? '' : field.input(val))}"></td>`;
+          }).join('');
+          const actionMarkup = isEditing
+            ? `<button class="icon-button save-button" type="button" data-action="save" data-index="${index}" data-tip="Guardar" aria-label="Guardar cambios">${icon('check')}</button><button class="icon-button cancel-button" type="button" data-action="cancel" data-index="${index}" data-tip="Cancelar" aria-label="Cancelar cambios">${icon('close')}</button>`
+            : `<button class="icon-button edit-button" type="button" data-action="edit" data-index="${index}" data-tip="Editar" aria-label="Editar metas de ${day.name}">${icon('edit')}</button><button class="icon-button delete-button" type="button" data-action="delete" data-index="${index}" data-tip="Eliminar meta" aria-label="Eliminar meta de ${day.name}">${icon('trash')}</button>`;
+          return `<tr>${`<td><span class="date-name">${day.name}</span><span class="date-value">${day.date}</span></td>`}${cells}<td><div class="actions">${actionMarkup}</div></td></tr>`;
+        }).join('');
+        renderTotals();
+      }
+      function renderTotals() {
+        const loaded = days.filter(Boolean);
+        const sum = key => loaded.reduce((total, day) => total + day[key], 0);
+        const totals = {
+          sale: sum('sale'),
+          entries: sum('entries'),
+          tickets: sum('tickets'),
+          articles: sum('articles'),
+          traffic: sum('traffic')
+        };
+        const aggregate = {
+          items: totals.tickets > 0 ? totals.articles / totals.tickets : null,
+          conversion: totals.entries > 0 ? totals.tickets / totals.entries * 100 : null,
+          capture: totals.traffic > 0 ? totals.entries / totals.traffic * 100 : null,
+          ticket: totals.tickets > 0 ? totals.sale / totals.tickets : null
+        };
+        const ratio = (key, suffix = '') => aggregate[key] === null ? '—' : `${decimal.format(aggregate[key])}${suffix}`;
+        tfoot.innerHTML = `<tr><td>Total / ratio</td><td>${loaded.length ? `$${money.format(totals.sale)}` : '—'}</td><td>${loaded.length ? integer.format(totals.entries) : '—'}</td><td>${ratio('items')}</td><td>${ratio('conversion', '%')}</td><td>${ratio('capture', '%')}</td><td>${aggregate.ticket === null ? '—' : `$${integer.format(aggregate.ticket)}`}</td><td></td></tr>`;
+      }
+      function startEdit(index) {
+        if (!days[index] || days.some(day => day && day.editing)) return;
+        days[index].snapshot = { ...days[index] };
+        days[index].editing = true;
+        days[index].lastChanged = null;
+        editingIndex = index;
+        render();
+        tbody.querySelector(`input[data-index="${index}"][data-field="sale"]`)?.focus();
+      }
+      function applyEditToBases(day, key, value) {
+        if (key === 'sale') day.sale = value;
+        if (key === 'entries') day.entries = value;
+        if (key === 'items') {
+          if (value < 1) return 'Artículos por ticket debe ser igual o mayor que 1.';
+          day.articles = value * day.tickets;
+        }
+        if (key === 'conversion') {
+          if (value <= 0 || value > 100) return 'La tasa de conversión debe ser mayor que 0% y no superar 100%.';
+          day.entries = day.tickets / (value / 100);
+        }
+        if (key === 'capture') {
+          if (value <= 0 || value > 100) return 'La tasa de captación debe ser mayor que 0% y no superar 100%.';
+          day.traffic = day.entries / (value / 100);
+        }
+        if (key === 'ticket') day.sale = value * day.tickets;
+        return validateBases(day);
+      }
+      function validateBases(day) {
+        const bases = [day.sale, day.entries, day.tickets, day.articles, day.traffic];
+        if (bases.some(value => !Number.isFinite(value) || value < 0)) return 'Los indicadores no pueden tener valores negativos.';
+        if (day.tickets <= 0 || day.entries <= 0 || day.articles <= 0 || day.traffic <= 0) return 'El valor debe permitir calcular los indicadores relacionados.';
+        if (day.tickets > day.entries + 1e-9) return 'Los tickets no pueden superar las entradas (conversión máxima: 100%).';
+        if (day.entries > day.traffic + 1e-9) return 'Las entradas no pueden superar el tráfico externo (captación máxima: 100%).';
+        if (day.articles + 1e-9 < day.tickets) return 'Debe haber al menos un artículo por ticket.';
+        return '';
+      }
+      function updateEditedField(input) {
+        const index = Number(input.dataset.index);
+        const day = days[index];
+        const field = fields.find(item => item.key === input.dataset.field);
+        if (!day || !field) return;
+        const parsed = field.parse(input.value);
+        if (parsed === null) {
+          input.setCustomValidity('Ingresa un número igual o mayor que cero.');
+          input.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        const candidate = { ...day };
+        const error = applyEditToBases(candidate, field.key, parsed);
+        if (error) {
+          input.setCustomValidity(error);
+          input.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        input.setCustomValidity('');
+        input.removeAttribute('aria-invalid');
+        for (const key of ['sale', 'entries', 'tickets', 'articles', 'traffic']) day[key] = candidate[key];
+        day.lastChanged = field.key;
+        // Los demás campos visibles se refrescan desde las bases calculadas, sin promedios.
+        for (const other of fields) {
+          if (other.key === field.key) continue;
+          const otherInput = tbody.querySelector(`input[data-index="${index}"][data-field="${other.key}"]`);
+          const currentValue = valueFor(day, other.key);
+          if (otherInput) otherInput.value = currentValue === null ? '' : other.input(currentValue);
+        }
+      }
+      function saveEdit(index) {
+        const day = days[index];
+        if (!day) return;
+        const invalidInput = tbody.querySelector(`input[data-index="${index}"][aria-invalid="true"]`);
+        if (invalidInput) {
+          invalidInput.reportValidity();
+          invalidInput.focus();
+          return;
+        }
+        const error = validateBases(day);
+        if (error) return;
+        delete day.snapshot;
+        delete day.editing;
+        delete day.lastChanged;
+        closeEditGuidance();
+        render();
+      }
+      function cancelEdit(index) {
+        const day = days[index];
+        if (!day) return;
+        const original = day.snapshot;
+        days[index] = original ? { ...original } : day;
+        delete days[index].snapshot;
+        delete days[index].editing;
+        closeEditGuidance();
+        render();
+      }
+      function showToast(message) {
+        document.querySelector('#toast-message').textContent = message;
+        toast.classList.add('is-visible');
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 6000);
+      }
+      function openDelete(index) {
+        if (!days[index]) return;
+        pendingDelete = index;
+        document.querySelector('#dialog-copy').textContent = `¿Quieres eliminar las metas de ${days[index].name.toLowerCase()}? El día quedará sin metas cargadas.`;
+        dialog.classList.add('is-open');
+        document.querySelector('#dialog-cancel').focus();
+      }
+      function closeDialog() {
+        pendingDelete = null;
+        dialog.classList.remove('is-open');
+      }
+      function confirmDelete() {
+        if (pendingDelete === null || !days[pendingDelete]) return closeDialog();
+        const deletedName = days[pendingDelete].name.toLowerCase();
+        if (editingIndex === pendingDelete) closeEditGuidance();
+        days[pendingDelete] = null;
+        closeDialog();
+        render();
+        showToast(`Las metas del día ${deletedName} fueron eliminadas correctamente.`);
+      }
+      tbody.addEventListener('click', event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const index = Number(button.dataset.index);
+        const action = button.dataset.action;
+        if (action === 'edit') startEdit(index);
+        if (action === 'save') saveEdit(index);
+        if (action === 'cancel') cancelEdit(index);
+        if (action === 'delete') openDelete(index);
+      });
+      tbody.addEventListener('input', event => {
+        const input = event.target.closest('input[data-field]');
+        if (!input) return;
+        updateEditedField(input);
+      });
+      tbody.addEventListener('focusin', event => {
+        const input = event.target.closest('input[data-field]');
+        if (input) updateEditGuidance(input.dataset.field);
+      });
+      tbody.addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        const input = event.target.closest('input[data-field]');
+        if (!input) return;
+        event.preventDefault();
+        saveEdit(Number(input.dataset.index));
+      });
+      document.querySelector('#dialog-confirm').addEventListener('click', confirmDelete);
+      document.querySelector('#dialog-cancel').addEventListener('click', closeDialog);
+      document.querySelector('#dialog-x').addEventListener('click', closeDialog);
+      dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog(); });
+      document.querySelector('#toast-close').addEventListener('click', () => toast.classList.remove('is-visible'));
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && dialog.classList.contains('is-open')) closeDialog(); });
+      render();
+    })();
+  </script>
+</body>
+</html>
