@@ -37,12 +37,16 @@ Al inicializar los datos de ejemplo, el prototipo deriva las bases internas así
 
 Los KPI se actualizan mientras se edita. El campo modificado ajusta la base correspondiente y las demás bases se mantienen, excepto por los KPI que se derivan de ellas:
 
+**La Meta de Venta solo cambia si el usuario la edita directamente. Ninguna edición de otro KPI puede modificarla.** Esta regla prevalece sobre el supuesto por defecto de la sección 5 de la especificación v2.1, que indicaba ajustar Venta al editar Ticket promedio o Precio promedio. Precio promedio continúa siendo interno y no editable en esta tabla.
+
 - **Meta de Venta:** actualiza Venta; recalcula Ticket promedio y Precio promedio.
 - **Entradas:** actualiza Entradas; recalcula Tasa de conversión y Tasa de captación.
 - **Artículos por ticket:** ajusta Artículos; recalcula Precio promedio.
 - **Tasa de conversión:** ajusta Entradas manteniendo Tickets; recalcula Tasa de captación.
 - **Tasa de captación:** ajusta Tráfico externo manteniendo Entradas.
-- **Ticket promedio:** ajusta Venta manteniendo Tickets; recalcula Precio promedio.
+- **Ticket promedio:** ajusta Tickets = Venta ÷ Ticket promedio, manteniendo Venta, Entradas, Artículos y Tráfico externo; recalcula Artículos por ticket y Tasa de conversión. Precio promedio no cambia.
+
+Si se escribe 0 en Ticket promedio, Tickets queda en 0 y la Meta de Venta conserva su valor. Los KPI que no puedan calcularse por falta de bases se muestran como «—» y no bloquean el guardado.
 
 El Precio promedio se calcula como Venta ÷ Artículos; no se usa como un valor fijo.
 

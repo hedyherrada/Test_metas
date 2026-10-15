@@ -248,7 +248,7 @@
           items: 'Supuesto aplicado: se ajusta la base Artículos; se recalcula Precio promedio.',
           conversion: 'Supuesto aplicado: se ajusta la base Entradas; también se recalcula Captación.',
           capture: 'Supuesto aplicado: se ajusta la base Tráfico externo; los demás KPIs calculados se mantienen.',
-          ticket: 'Supuesto aplicado: se ajusta la base Venta; también se recalcula Precio promedio.'
+          ticket: 'Se mantiene la Meta de Venta y se ajustan los Tickets internos; se recalculan Artículos por ticket y Conversión.'
         };
         editGuidance.textContent = messages[key] || '';
         editGuidance.hidden = !messages[key];
@@ -318,14 +318,8 @@
           day.traffic = value === 0 ? 0 : day.entries > 0 ? day.entries / (value / 100) : day.traffic;
         }
         if (key === 'ticket') {
-          if (value === 0) day.tickets = 0;
-          else {
-            const ticketBase = day.tickets > 0 ? day.tickets : day.snapshot?.tickets || 0;
-            if (ticketBase > 0) {
-              day.tickets = ticketBase;
-              day.sale = value * ticketBase;
-            }
-          }
+          // La Venta solo cambia mediante su edición directa; el Ticket promedio ajusta Tickets.
+          day.tickets = value > 0 && day.sale > 0 ? day.sale / value : 0;
         }
         return validateBases(day);
       }
