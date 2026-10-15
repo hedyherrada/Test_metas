@@ -185,6 +185,8 @@
       const money = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
       const integer = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
       const decimal = new Intl.NumberFormat('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      // Mientras se edita, los decimales permiten ver incluso ajustes mínimos.
+      const liveNumber = new Intl.NumberFormat('es-CL', { useGrouping: false, maximumSignificantDigits: 12 });
       const fields = [
         { key: 'sale', label: 'Meta de Venta', display: value => `$${money.format(value)}`, input: value => String(Math.round(value)), parse: parseAmount },
         { key: 'entries', label: 'Entradas', display: value => integer.format(value), input: value => String(Math.round(value)), parse: parseAmount },
@@ -336,7 +338,8 @@
         const day = days[index];
         const field = fields.find(item => item.key === input.dataset.field);
         if (!day || !field) return;
-        const parsed = field.parse(input.value);
+        // Los campos vacíos opcionales se tratan como cero mientras se edita.
+        const parsed = String(input.value).trim() === '' ? 0 : field.parse(input.value);
         if (parsed === null) {
           input.setCustomValidity('Ingresa un número igual o mayor que cero.');
           input.setAttribute('aria-invalid', 'true');
@@ -345,31 +348,41 @@
         const previousKpis = kpis(day);
         const candidate = { ...day };
         const error = applyEditToBases(candidate, field.key, parsed);
-        if (error) {
-          input.setCustomValidity(error);
-          input.setAttribute('aria-invalid', 'true');
-          return;
-        }
-        input.setCustomValidity('');
-        input.removeAttribute('aria-invalid');
+        // Actualiza la vista con cada valor numérico, incluso si la combinación
+        // temporal aún infringe una regla. La validación sigue bloqueando Guardar.
         for (const key of ['sale', 'entries', 'tickets', 'articles', 'traffic']) day[key] = candidate[key];
         day.lastChanged = field.key;
+        for (const other of fields) {
+          if (other.key === field.key) continue;
+          const otherInput = tbody.querySelector(`input[data-index="${index}"][data-field="${other.key}"]`);
+          otherInput?.setCustomValidity('');
+          otherInput?.removeAttribute('aria-invalid');
+        }
+        input.setCustomValidity(error);
+        if (error) input.setAttribute('aria-invalid', 'true');
+        else input.removeAttribute('aria-invalid');
         day.autoUpdatedFields ||= new Set();
         day.autoUpdatedFields.delete(field.key);
         const updatedKpis = kpis(day);
         // Los demás campos visibles se refrescan desde las bases calculadas, sin promedios.
         for (const other of fields) {
           if (other.key === field.key) continue;
-          const previousDisplay = previousKpis[other.key] === null ? '—' : other.display(previousKpis[other.key]);
-          const updatedDisplay = updatedKpis[other.key] === null ? '—' : other.display(updatedKpis[other.key]);
-          if (previousDisplay !== updatedDisplay) day.autoUpdatedFields.add(other.key);
+          const previousValue = previousKpis[other.key];
+          const updatedValue = updatedKpis[other.key];
+          const changed = previousValue === null || updatedValue === null
+            ? previousValue !== updatedValue
+            : Math.abs(previousValue - updatedValue) > Number.EPSILON * 8 * Math.max(1, Math.abs(previousValue), Math.abs(updatedValue));
+          if (changed) day.autoUpdatedFields.add(other.key);
           const otherInput = tbody.querySelector(`input[data-index="${index}"][data-field="${other.key}"]`);
           const currentValue = valueFor(day, other.key);
           if (otherInput) {
-            otherInput.value = currentValue === null ? '' : other.input(currentValue);
+            otherInput.value = currentValue === null ? '' : day.autoUpdatedFields.has(other.key)
+              ? liveNumber.format(currentValue)
+              : other.input(currentValue);
             otherInput.closest('td')?.classList.toggle('is-edited', day.autoUpdatedFields.has(other.key));
           }
         }
+        renderTotals();
       }
       function saveEdit(index) {
         const day = days[index];
